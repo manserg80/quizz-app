@@ -1,32 +1,32 @@
 $(document).ready(function() {
-    const quizData = [
-      {
-        question: "Which country represents this flag?",
-        options: ["Brazil", "Nicaragua", "Australia", "Wales"],
-        image: "./img/brazil.jpg"
-      },
-      {
-        question: "Which country represents this flag?",
-        options: ["Germany", "France", "Egypt"],
-        image: "./img/france.jpg"
-      },
-      {
-        question: "Which country represents this flag?",
-        options: ["Croatia", "Italy"],
-        image: "./img/italy.jpg"
-      },
-      {
-        question: "Which country represents this flag?",
-        options: ["England", "Poland", "Spain", "Romania"],
-        image: "./img/spain.jpg"
-      },
-      {
-        question: "Which country represents this flag?",
-        options: ["USA", "Argentina", "Japan"],
-        image: "./img/usa.jpg"
-      }
-    ];
-  
+  const quizData = [
+    {
+      question: "Which country represents this flag?",
+      options: ["Brazil", "Nicaragua", "Australia", "Wales"],
+      image: "./img/brazil.jpg"
+    },
+    {
+      question: "Which country represents this flag?",
+      options: ["Germany", "France", "Egypt"],
+      image: "./img/france.jpg"
+    },
+    {
+      question: "Which country represents this flag?",
+      options: ["Croatia", "Italy"],
+      image: "./img/italy.jpg"
+    },
+    {
+      question: "Which country represents this flag?",
+      options: ["England", "Poland", "Spain", "Romania"],
+      image: "./img/spain.jpg"
+    },
+    {
+      question: "Which country represents this flag?",
+      options: ["USA", "Argentina", "Japan"],
+      image: "./img/usa.jpg"
+    }
+  ];
+
   let currentBlock = 0;
   let quizCompleted = false;
   const userAnswers = [];
@@ -39,41 +39,46 @@ $(document).ready(function() {
 
       $('.question').text(currentQuestion);
       $('.options').empty();
-      currentOptions.forEach((option, index) => {
-        $('.options').append(`<label><input type="checkbox" name="answer" value="${index}">${option}</label><br>`);
-      });
+        currentOptions.forEach((option, index) => {
+          $('.options').append(`<label><input type="checkbox" name="answer_${currentBlock}" value="${index}">${option}</label><br>`);
+        });
       $('.image').html(`<img src="${currentImage}" alt="Image">`);
+      $('.next-btn').show();
       $('.final-form').hide();
-
-      if (quizCompleted) {
-        $('.next-btn').hide();
-        $('.final-form').show();
-      } else {
-        $('.next-btn').show();
-      }
     }
   };
 
   $('.next-btn').on('click', function() {
+    if (currentBlock === quizData.length - 1) {
+      quizCompleted = true;
+      $('.card-body').hide();
+      $('.final-form').show();
+    }
     if (currentBlock < quizData.length) {
-      if ($('input[name="answer"]:checked').length === 0) {
+      const selectedOptions = $('input[name="answer_' + currentBlock + '"]:checked');
+
+      if (selectedOptions.length === 0) {
         alert('Please select an answer.');
         return;
       }
-  
-      const selectedOption = $('input[name="answer"]:checked').val();
+
+      if (selectedOptions.length !== 1) {
+        alert('Please select just one answer.');
+        return;
+      }
+
+      const selectedIndexes = [];
+      selectedOptions.each(function() {
+        selectedIndexes.push($(this).val());
+      });
+
       const answerData = {
         question: quizData[currentBlock].question,
-        selectedOption: quizData[currentBlock].options[selectedOption]
+        selectedOptions: selectedIndexes.map(index => quizData[currentBlock].options[index])
       };
       userAnswers.push(answerData);
-  
+
       currentBlock++;
-      renderQuizBlock();
-    }
-  
-    if (currentBlock === quizData.length) {
-      quizCompleted = true;
       renderQuizBlock();
     }
   });
@@ -83,46 +88,53 @@ $(document).ready(function() {
     quizCompleted = false;
     renderQuizBlock();
   });
-  
-    $('#quiz-form').validate({
+
+  $.validator.addMethod("lettersWithSpacesOnly", function(value, element) {
+    return this.optional(element) || /^[A-Za-z\s]+$/.test(value);
+    }, "Please enter letters and spaces only (no digits or special characters).");
+
+  $('#phone').mask('+Z (ZZZ) ZZZ-ZZZZ', {
+    translation: {
+        'Z': {
+            pattern: /[0-9]/, optional: true
+        }
+    }, placeholder: "+1(___) ___ - __ - __"});
+
+  $('#quiz-form').validate({
       rules: {
         fname: {
           required: true,
           minlength: 3,
-          pattern: /^[A-Za-zА-Яа-я\s]+$/
+          lettersWithSpacesOnly: true
         },
         lname: {
           required: true,
           minlength: 3,
-          pattern: /^[A-Za-zА-Яа-я\s]+$/
+          lettersWithSpacesOnly: true
         },
         email: {
           required: true,
           email: true
         },
         phone: {
-          required: true,
-          minlength: 18
+          required: true
         }
       },
       messages: {
         fname: {
-          required: 'Пожалуйста, введите имя.',
-          minlength: 'Минимальная длина имени - 3 символа.',
-          pattern: 'Имя может содержать только буквы и пробелы.'
+          required: 'Please enter your first name.',
+          minlength: 'The minimum name length is 3 characters.'
         },
         lname: {
-          required: 'Пожалуйста, введите фамилию.',
-          minlength: 'Минимальная длина фамилии - 3 символа.',
-          pattern: 'Фамилия может содержать только буквы и пробелы.'
+          required: 'Please enter your last name.',
+          minlength: 'The minimum last name length is 3 characters.'
         },
         email: {
-          required: 'Пожалуйста, введите адрес электронной почты.',
-          email: 'Пожалуйста, введите действительный адрес электронной почты.'
+          required: 'Please enter an email address.',
+          email: 'Please enter a valid email address.'
         },
         phone: {
-          required: 'Пожалуйста, введите номер телефона.',
-          minlength: 'Пожалуйста, введите полный номер телефона.'
+          required: 'Please, phone number requiered.',
         }
       },
       submitHandler: function(form) {
@@ -138,7 +150,6 @@ $(document).ready(function() {
           }
         });
       }
-});
-    $('#phone').mask('+1 (111) 111-1111');
-    renderQuizBlock();
+  });
+  renderQuizBlock();
 });
